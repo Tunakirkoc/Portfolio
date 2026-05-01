@@ -1,0 +1,39 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import LabsPostCard from "../../components/LabsPostCard.astro";
+
+const posts = (await getCollection("labs"))
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+---
+
+<BaseLayout title="Labs" description="IT projects, homelab experiments, and engineering write-ups by Tuna Kirkoc.">
+  <main class="min-h-screen bg-neutral-950 text-white px-6 py-12">
+    <div class="max-w-2xl mx-auto">
+
+      <a href="/" class="text-neutral-500 hover:text-emerald-400 text-sm transition-colors font-[JetBrains_Mono]">← home</a>
+
+      <div class="mt-10 mb-10">
+        <p class="text-neutral-400 text-sm font-[JetBrains_Mono] mb-2">Tuna Kirkoc</p>
+        <h1 class="text-4xl font-bold tracking-tight font-[Inter]">Labs</h1>
+        <p class="text-neutral-400 text-sm mt-2 font-[Inter]">
+          Homelab, IT projects, and engineering experiments.
+        </p>
+      </div>
+
+      {posts.length === 0 ? (
+        <p class="text-neutral-600 font-[JetBrains_Mono] text-sm">// no posts yet</p>
+      ) : (
+        <ul class="space-y-4">
+          {posts.map((post) => (
+            <li>
+              <LabsPostCard id={post.id.replace(/\.mdx?$/, '')} />
+            </li>
+          ))}
+        </ul>
+      )}
+
+    </div>
+  </main>
+</BaseLayout>

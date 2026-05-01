@@ -1,0 +1,307 @@
+---
+title: "Station ADS-B : Suivi du trafic aérien chez soi"
+description: "Construire une station de réception ADS-B pour suivre le trafic aérien en temps réel depuis chez soi et collaborer avec les réseaux d'agrégation de données."
+date: "2025-01-15"
+tags: ["ads-b", "aviation", "sdr", "raspberry-pi", "docker"]
+accent: "sky"
+---
+
+Chaque avion commercial qui passe au-dessus de chez toi diffuse en permanence sa position GPS, son altitude, sa vitesse et son identifiant sans chiffrement, sur 1090 MHz. Avec un dongle USB, une antenne extérieure et un serveur, on peut recevoir tout ce trafic, le décoder en temps réel et afficher une carte interactive de tout ce qui vole dans un rayon de 200 à 400 km.
+
+C'est l'ADS-B. Ce post couvre le protocole en détail, puis le montage complet de la station avec la stack Docker `ultrafeeder`.
+
+## Qu'est-ce que l'ADS-B ?
+
+### Mode S et le concept d'Extended Squitter
+
+ADS-B (*Automatic Dependent Surveillance - Broadcast*) est un protocole de surveillance aérienne standardisé par l'[OACI](https://www.icao.int/). Ce qui le distingue du radar classique : il est entièrement **unidirectionnel**. Le radar interroge, l'ADS-B diffuse. Chaque avion équipé émet spontanément ses données sans sollicitation sol, environ deux fois par seconde.
+
+Il s'appuie sur **Mode S** (*Mode Select*), un protocole sol-avion sur **1090 MHz** développé dans les années 80. L'ADS-B utilise spécifiquement le format **DF-17** (*Downlink Format 17*), aussi appelé *Extended Squitter* (ES), un type de message Mode S long que l'avion émet de façon autonome.
+
+### Structure d'une trame DF-17
+
+Une trame ADS-B DF-17 fait **112 bits** (14 octets), transmis en modulation **PPM** (*Pulse Position Modulation*) : chaque bit est encodé par la position d'une impulsion dans une fenêtre de 1 µs. Le signal est précédé d'un préambule fixe de 8 µs (4 impulsions aux positions 0, 1, 3,5 et 4,5 µs) qui permet au récepteur de se synchroniser.
+
+```
+ Préambule    DF    CA      Adresse ICAO         Message Extended (ME)         CRC
+  8 µs      5 bits 3 bits     24 bits                  56 bits                24 bits
+├─────────┤├─────┤├───┤├──────────────────┤├───────────────────────────────┤├──────────┤
+│ 0─1─3.5─4.5 µs │    │  ex: 0x3944EF    │ TC (5b) │ Données (51b)        │          │
+```
+
+| Champ | Taille | Rôle |
+|---|---|---|
+| **DF** (Downlink Format) | 5 bits | Type de message — DF=17 identifie un ADS-B ES |
+| **CA** (Capability) | 3 bits | Capacités du transpondeur (CA=5 : airborne) |
+| **Adresse ICAO** | 24 bits | Identifiant unique de l'avion, assigné à vie (ex. `3944EF` = F-GSQI) |
+| **ME** (Message Extended) | 56 bits | Données utiles contenu variable selon le Type Code |
+| **CRC** | 24 bits | Contrôle d'intégrité sur les 88 bits précédents |
+
+### Le champ ME : Type Code et contenu
+
+Les 5 premiers bits du champ ME forment le **Type Code (TC)**, qui définit la nature des données transportées :
+
+| TC | Contenu |
+|---|---|
+| 1-4 | **Identification** : indicatif OACI de l'avion (ex. `AFR447`), encodé en 6 bits par caractère |
+| 5-8 | Position en surface (avion au sol) |
+| 9-18 | **Position en vol** : latitude, longitude, altitude barométrique |
+| 19 | **Vitesse** : vitesse sol, cap, vitesse verticale |
+| 28 | Statut de l'avion, code squawk, état d'urgence |
+| 29 | État cible ADS-B v2 |
+| 31 | Informations opérationnelles |
+
+#### Décodage d'une trame réelle
+
+Prenons la trame brute `8D4840D6202CC371C32CE0576098` :
+
+```
+8D        → DF=17, CA=5
+4840D6    → ICAO 0x4840D6
+202CC371C32CE0  → ME
+  TC = 0b00100 = 4 (identification)
+  Callsign décodé → "KLM1023 "
+576098    → CRC ✓
+```
+
+#### Encodage CPR des positions
+
+Le champ ME des messages de position (TC 9-18) n'encode pas directement les coordonnées GPS — il utilise le **CPR** (*Compact Position Reporting*), un format compressé sur **17 bits de latitude + 17 bits de longitude**.
+
+La résolution d'une position absolue nécessite **deux trames consécutives** : une trame *paire* et une trame *impaire* (bit F dans le message), reçues dans un intervalle inférieur à 10 secondes. Les deux encodages utilisent des grilles de zones différentes (60 zones pour le pair, 59 pour l'impair), ce qui permet par combinaison de lever l'ambiguïté de position. Avec une seule trame, seule une position relative approximative est possible.
+
+C'est pour ça que `readsb` maintient un état par ICAO : il doit accumuler les trames pour reconstruire la trajectoire.
+
+### Ce que fait le RTL-SDR concrètement
+
+Le dongle RTL-SDR est basé sur la puce **RTL2832U** associée à un tuner **R820T2**. Conçu à l'origine pour la TNT, il peut être utilisé en mode *direct sampling* comme récepteur radio généraliste entre ~500 kHz et 1,75 GHz.
+
+Il échantillonne le signal RF en **IQ** (composantes In-phase et Quadrature) à jusqu'à **2,4 Msamples/s**. Le logiciel `readsb` reçoit ce flux IQ brut via librtlsdr, applique la démodulation PPM, reconstruit les bits, vérifie le CRC de chaque trame, puis publie les messages décodés en format **Beast** (protocole binaire standard de la communauté ADS-B) sur un socket TCP local.
+
+## Matériel
+
+### Récepteur SDR
+
+Un **RTL-SDR v3** suffit amplement pour l'ADS-B. C'est la référence du marché pour cette tâche : filtre HF intégré, oscillateur température-compensé (TCXO à 1 ppm), boîtier métallique antiparasite.
+
+Le point critique à l'usage est le **gain** : trop bas, les avions lointains se noient dans le bruit thermique ; trop élevé, les avions proches saturent l'ADC et génèrent de faux positifs. `readsb` intègre un algorithme d'autogain (`--autogain`) qui tâtonne par paliers jusqu'à trouver l'optimum — laisser tourner 24-48h avant de juger les performances.
+
+Un **filtre bandpass 1090 MHz** (type FA-FA) en amont du dongle est fortement conseillé si tu es en zone urbaine : les bandes 4G/LTE (700-900 MHz, 2,1 GHz) génèrent des raies qui saturent l'AGC et réduisent la sensibilité effective.
+
+### Antenne extérieure 1090 MHz
+
+C'est le facteur le plus impactant sur la portée. La différence entre une tige λ/4 à 69 mm collée au dongle et une antenne colinéaire extérieure peut représenter **doubler ou tripler la portée**.
+
+L'idéal est une **antenne colinéaire** dédiée 1090 MHz (gain 5-7 dBi), montée **en hauteur**, **dégagée vers le ciel** dans toutes les directions. Chaque obstacle (toit, arbre, bâtiment) crée une zone d'ombre.
+
+Le câble entre l'antenne et le dongle doit être **court** : à 1 GHz, le RG-58 perd ~0,5 dB/m, le RG-6 ~0,25 dB/m. Toute perte de câble mange directement la sensibilité. Placer le dongle au plus près de l'antenne si possible.
+
+**Mon setup** : antenne colinéaire extérieure 1090 MHz montée sur le toit, câble RG-6 court, filtre bandpass FA-FA, dongle RTL-SDR v3 à l'intérieur.
+
+### Hôte
+
+N'importe quel Raspberry Pi recent (2 Go RAM minimum pour avoir de la marge) convient. La stack ultrafeeder tourne confortablement avec 512 Mo mais le RPi 4 permet de faire tourner d'autres services en parallèle. OS recommandé : **Raspberry Pi OS Lite 64-bit** (sans bureau graphique).
+ 
+## Préparation du système
+
+### Installation de l'OS
+
+Flasher Raspberry Pi OS Lite 64-bit via [Raspberry Pi Imager](https://www.raspberrypi.com/software/). Dans les options avancées : activer SSH, configurer le hostname, Wi-Fi si besoin. Brancher en Ethernet est préférable pour la stabilité.
+
+Connexion initiale et mise à jour :
+
+```bash
+ssh pi@<ip_du_rpi>
+sudo apt update && sudo apt upgrade -y
+```
+
+### Blacklister le module DVB du noyau
+
+Par défaut, Linux charge automatiquement le pilote `dvb_usb_rtl28xxu` dès que le dongle RTL-SDR est branché, le reconnaissant comme une clé TNT. Ce pilote prend le contrôle du périphérique et empêche `readsb` d'y accéder via librtlsdr.
+
+Il faut le blacklister de façon permanente :
+
+```bash
+echo 'blacklist dvb_usb_rtl28xxu' | sudo tee /etc/modprobe.d/blacklist-rtlsdr.conf
+sudo rmmod dvb_usb_rtl28xxu 2>/dev/null || true
+```
+
+Vérifier que le dongle est bien reconnu après reconnexion :
+
+```bash
+lsusb | grep Realtek
+# Bus 001 Device 003: ID 0bda:2838 Realtek Semiconductor Corp. RTL2838 DVB-T
+```
+
+### Fix réseau multi-conteneurs
+
+Avec plusieurs conteneurs Docker actifs, `dhcpcd` peut tenter de configurer les interfaces virtuelles `veth*` créées par Docker, provoquant des instabilités réseau. Fix en une ligne :
+
+```bash
+echo "denyinterfaces veth*" | sudo tee -a /etc/dhcpcd.conf
+sudo systemctl restart dhcpcd
+```
+
+## Installation de Docker
+
+```bash
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+```
+
+Déconnecter et reconnecter la session SSH pour que le groupe `docker` soit actif, puis vérifier :
+
+```bash
+docker run --rm hello-world
+```
+
+## La stack ultrafeeder
+
+### Architecture
+
+`ultrafeeder` est un conteneur tout-en-un maintenu par la communauté [SDR Enthusiasts](https://github.com/sdr-enthusiasts/docker-adsb-ultrafeeder). Il intègre plusieurs composants qui communiquent en interne :
+
+```
+Antenne 1090 MHz
+       │
+       ▼
+   RTL-SDR USB
+       │
+       ▼
+    readsb          ← décode les trames Mode S / ADS-B depuis le signal IQ brut
+       │
+       ├──► tar1090        → carte interactive temps réel   (port 8080)
+       ├──► graphs1090     → métriques de performance       (port 8080/graphs1090)
+       ├──► mlat-client    → multilatération (MLAT)
+       └──► Beast output   → flux TCP vers les agrégateurs
+```
+
+**readsb** est le cœur : il lit le flux IQ du dongle et sort les trames décodées. **tar1090** est l'interface web — carte des avions, traces, heatmaps. **graphs1090** génère des graphiques RRD sur le taux de messages reçus, la portée maximale et les performances du dongle. **mlat-client** synchronise les timestamps de réception avec d'autres stations pour trianguler des avions sans ADS-B (Mode A/C/S classique).
+
+### docker-compose.yml
+
+```bash
+mkdir ~/adsb && cd ~/adsb
+```
+
+`docker-compose.yml` :
+
+```yaml
+services:
+  ultrafeeder:
+    image: ghcr.io/sdr-enthusiasts/docker-adsb-ultrafeeder
+    container_name: ultrafeeder
+    hostname: ultrafeeder
+    restart: unless-stopped
+    tty: true
+    device_cgroup_rules:
+      - 'c 189:* rwm'
+    ports:
+      - 8080:80        # tar1090 — carte interactive
+      - 9273:9273      # Prometheus stats
+      - 9274:9274      # Prometheus histograms
+    environment:
+      - TZ=Europe/Paris
+      # Récepteur SDR
+      - READSB_DEVICE_TYPE=rtlsdr
+      - READSB_RTLSDR_DEVICE=00000001   # numéro de série du dongle
+      - READSB_GAIN=autogain
+      # Position de l'antenne (obligatoire)
+      - LAT=48.8566
+      - LONG=2.3522
+      - ALT=45m
+      # Agrégateurs + MLAT (séparés par ;)
+      - ULTRAFEEDER_CONFIG=
+          adsb,feed.adsb.fi,30004,beast_reduce_plus_out;
+          mlat,feed.adsb.fi,31090,39000;
+          adsb,feed.adsbexchange.com,30004,beast_reduce_plus_out;
+          mlat,feed.adsbexchange.com,31090,39001
+      - MLAT_USER=mon-callsign
+      # Interface tar1090
+      - TAR1090_DEFAULTCENTERLAT=48.8566
+      - TAR1090_DEFAULTCENTERLON=2.3522
+      - TAR1090_DEFAULTZOOM=9
+    volumes:
+      - /dev/bus/usb:/dev/bus/usb:rw
+      - ./data:/var/lib/collectd
+      - /proc/diskstats:/proc/diskstats:ro
+    tmpfs:
+      - /run:exec,size=256M
+      - /tmp:size=128M
+      - /var/log:size=32M
+```
+
+L'accès au dongle USB se fait via `device_cgroup_rules: 'c 189:* rwm'` (classe de périphériques USB) et le bind mount `/dev/bus/usb`. Le `tmpfs` sur `/run` et `/tmp` évite d'écrire en permanence sur la carte SD.
+
+### Trouver le numéro de série du dongle
+
+```bash
+docker run --rm -it \
+  --device=/dev/bus/usb \
+  ghcr.io/sdr-enthusiasts/docker-rtlsdr rtl_test -t
+```
+
+Le numéro de série affiché (ex. `00000001`) est à renseigner dans `READSB_RTLSDR_DEVICE`. Si le dongle n'a pas de numéro de série programmé, utiliser `0`.
+
+### Variables clés
+
+| Variable | Description |
+|---|---|
+| `LAT` / `LONG` / `ALT` | Position GPS de l'antenne — obligatoire pour MLAT et les cartes |
+| `TZ` | Timezone IANA (ex. `Europe/Paris`) |
+| `READSB_RTLSDR_DEVICE` | Numéro de série ou index du dongle |
+| `READSB_GAIN` | `autogain` pour démarrer, ajuster après 48h si besoin |
+| `ULTRAFEEDER_CONFIG` | Liste des connexions ADSB et MLAT, séparées par `;` |
+| `MLAT_USER` | Identifiant utilisé sur les réseaux MLAT |
+
+## Mise en route
+
+```bash
+docker compose up -d
+docker compose logs -f ultrafeeder
+```
+
+Les premiers logs montrent `readsb` qui s'initialise, l'autogain qui démarre, puis les premières trames reçues. En moins d'une minute avec une antenne extérieure correcte, les avions commencent à apparaître.
+
+Interface web sur `http://<ip_du_rpi>:8080` — graphiques de performance sur `http://<ip_du_rpi>:8080/graphs1090/`.
+
+## Partage des données
+
+Une station ADS-B seule n'a qu'un intérêt local. Les agrégateurs consolident les flux de milliers de stations pour une couverture mondiale — et en échange, plusieurs offrent un accès premium gratuit.
+
+### Réseaux communautaires
+
+Ces réseaux reversent les données à la communauté et aux chercheurs sans condition :
+
+| Réseau | Ligne ULTRAFEEDER_CONFIG |
+|---|---|
+| **adsb.fi** | `adsb,feed.adsb.fi,30004,beast_reduce_plus_out` |
+| **ADS-B Exchange** | `adsb,feed.adsbexchange.com,30004,beast_reduce_plus_out` |
+| **ADSBHub** | `adsb,data.adsbhub.org,5002,beast_reduce_out` |
+| **OpenSky Network** | `adsb,feed.openskynetwork.org,30004,beast_reduce_plus_out` |
+
+Chaque entrée MLAT correspondante à ajouter pour la multilatération :
+
+```
+mlat,feed.adsb.fi,31090,39000;
+mlat,feed.adsbexchange.com,31090,39001
+```
+
+Les ports de sortie MLAT (39000, 39001…) doivent être distincts par réseau.
+
+### Réseaux commerciaux
+
+FlightAware et FlightRadar24 nécessitent leurs propres conteneurs dédiés (`piaware`, `fr24feed`) ajoutés au `docker-compose.yml`. Ultrafeeder leur envoie le flux Beast en local :
+
+```yaml
+# Dans ULTRAFEEDER_CONFIG, alimenter piaware en local :
+adsb,piaware,30105,beast_out
+```
+
+En échange d'un flux continu, FlightAware offre un compte Enterprise gratuit, FlightRadar24 un compte Business.
+
+## Résultat
+
+La station tourne en continu sur le RPi 4 avec une charge CPU de 3-5%. L'antenne extérieure 1090 MHz offre une portée de **300-400 km** par conditions dégagées — les avions en croisière à FL350 sont visibles bien avant d'entrer dans la zone de 200 km.
+
+La carte tar1090 affiche en temps réel la position, l'altitude, la vitesse sol, le callsign, le type d'appareil et la compagnie de chaque vol. Les traces historiques et les heatmaps se construisent progressivement sur plusieurs jours, donnant une lecture du flux de trafic aérien au-dessus de la zone.

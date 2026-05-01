@@ -1,0 +1,61 @@
+---
+import { ClientRouter } from "astro:transitions";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Tuna Kirkoc - IT Student" } = Astro.props;
+
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    
+    <title>{title} — Tuna Kirkoc</title>
+    <ClientRouter />
+  </head>
+  <body>
+    <slot />
+
+    <footer
+      id="scroll-footer"
+      class="opacity-0 translate-y-4 transition-all duration-500 ease-out border-t border-neutral-800/60 bg-neutral-950 px-6 py-3"
+    >
+      <div class="max-w-5xl mx-auto flex items-center justify-between text-xs text-neutral-500 font-[JetBrains_Mono]">
+        <span>Tuna Kirkoc</span>
+        <span>&copy; {new Date().getFullYear()}</span>
+      </div>
+    </footer>
+
+    <script>
+      const footer = document.getElementById("scroll-footer");
+      if (footer) {
+        const observer = new IntersectionObserver(
+          ([entry]) => {
+            if (entry.isIntersecting) {
+              footer.classList.remove("opacity-0", "translate-y-4");
+              footer.classList.add("opacity-100", "translate-y-0");
+            }
+          },
+          { threshold: 0.1 }
+        );
+        observer.observe(footer);
+      }
+    </script>
+  </body>
+</html>

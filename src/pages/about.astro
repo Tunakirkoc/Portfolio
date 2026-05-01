@@ -1,0 +1,170 @@
+---
+import { Image } from "astro:assets";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import profileImg from "../assets/images/profile.jpg";
+---
+
+<BaseLayout
+  title="À propos"
+  description="Tuna Kirkoc — étudiant en administration système et réseaux, passionné d'infrastructure, de cybersécurité et d'homelab."
+>
+  <main class="min-h-screen bg-neutral-950 text-white px-6 py-12 font-[Inter]">
+    <div class="max-w-2xl mx-auto">
+      <a href="/" class="text-neutral-500 hover:text-neutral-200 text-sm transition-colors font-[JetBrains_Mono]">← accueil</a>
+
+      <header class="mt-10 mb-12 flex flex-col sm:flex-row gap-8 items-start">
+        <Image
+          src={profileImg}
+          alt="Portrait de Tuna Kirkoc"
+          width={112}
+          height={112}
+          loading="eager"
+          class="w-28 h-28 rounded-full object-cover border-2 border-neutral-800 shrink-0"
+        />
+        <div>
+          <p class="text-neutral-400 text-sm font-[JetBrains_Mono] mb-1">Tuna Kirkoc</p>
+          <h1 class="text-4xl font-bold tracking-tight">À propos</h1>
+          <p class="text-neutral-400 mt-3 leading-relaxed">
+            J'ai 22 ans et je recherche de nouvelles expériences professionnelles dans le domaine de l'IT.
+            Curieux et passionné par les systèmes, les réseaux et l'infrastructure, j'aime monter en
+            compétences sur le terrain comme en autonomie (homelab, veille, projets personnels).
+          </p>
+        </div>
+      </header>
+
+      <section class="mb-12">
+        <h2 class="text-xs text-neutral-500 font-[JetBrains_Mono] uppercase tracking-widest mb-4">Formation</h2>
+        <ul class="space-y-5 text-sm border-l border-neutral-800 pl-5">
+          <li>
+            <time class="text-neutral-200 font-[JetBrains_Mono] text-xs">depuis janv. 2024</time>
+            <p class="font-medium mt-1">Bac+4 — Administrateur système et réseau</p>
+            <p class="text-neutral-400 mt-0.5">ENI École · en alternance chez Global Connect SAS (Angers)</p>
+          </li>
+          <li>
+            <time class="text-neutral-500 font-[JetBrains_Mono] text-xs">sept. 2021 - juil. 2023</time>
+            <p class="font-medium mt-1">BTS SIO — option SISR (diplômé)</p>
+            <p class="text-neutral-400 mt-0.5">Lycée Chevrollier · solutions d'infrastructure, systèmes et réseaux</p>
+          </li>
+          <li>
+            <time class="text-neutral-500 font-[JetBrains_Mono] text-xs">sept. 2018 - juil. 2021</time>
+            <p class="font-medium mt-1">Bac Pro — systèmes numériques (diplômé)</p>
+            <p class="text-neutral-400 mt-0.5">Lycée Chevrollier · option RISC (réseaux informatiques et systèmes communicants)</p>
+          </li>
+        </ul>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-xs text-neutral-500 font-[JetBrains_Mono] uppercase tracking-widest mb-4">Expérience professionnelle</h2>
+        <ul class="space-y-6 text-sm">
+          <li class="border-b border-neutral-800/80 pb-6">
+            <time class="text-neutral-200 font-[JetBrains_Mono] text-xs">janv. 2024 - aujourd'hui</time>
+            <p class="font-medium mt-1">Global Connect — administrateur système, réseau et télécom</p>
+            <ul class="text-neutral-400 mt-2 space-y-1.5 list-disc list-inside leading-relaxed">
+              <li>Support technique de niveaux 1 à 3 pour plus de 500 clients TPE/PME</li>
+              <li>Conception et déploiement de solutions de cybersécurité (Stormshield, OPNsense)</li>
+              <li>Déploiement et maintenance d'accès Internet professionnels (FTTO / FTTB, opérateur niveau 3)</li>
+              <li>Installation et maintenance d'infrastructures réseau (Zyxel, Draytek) et de téléphonie (3CX)</li>
+              <li>Mise en place d'un monitoring centralisé avec Grafana pour optimiser les diagnostics</li>
+              <li>Migration d'outils collaboratifs (Microsoft 365 / Google Workspace, Dynamics 365 / HubSpot)</li>
+            </ul>
+          </li>
+          <li class="border-b border-neutral-800/80 pb-6">
+            <time class="text-neutral-500 font-[JetBrains_Mono] text-xs">mai - juil. 2022</time>
+            <p class="font-medium mt-1">ESEO Angers — technicien système et réseau</p>
+            <ul class="text-neutral-400 mt-2 space-y-1.5 list-disc list-inside leading-relaxed">
+              <li>Déploiement de parcs informatiques pour des laboratoires d'ingénierie (FOG Project)</li>
+              <li>Maintenance d'infrastructures réseau Cisco</li>
+              <li>Mise à niveau et gestion d'affichages numériques (Xibo)</li>
+            </ul>
+          </li>
+          <li class="border-b border-neutral-800/80 pb-6">
+            <time class="text-neutral-500 font-[JetBrains_Mono] text-xs">fév. - mars 2023</time>
+            <p class="font-medium mt-1">Vozit — technicien système et télécom</p>
+            <ul class="text-neutral-400 mt-2 space-y-1.5 list-disc list-inside leading-relaxed">
+              <li>Déploiement de serveurs SIP sous Asterisk</li>
+              <li>Installation et gestion d'hyperviseurs Proxmox VE</li>
+            </ul>
+          </li>
+          <li>
+            <time class="text-neutral-500 font-[JetBrains_Mono] text-xs">janv. - mars 2021</time>
+            <p class="font-medium mt-1">Lalè Boutique — technicien système et réseau</p>
+            <p class="text-neutral-400 mt-2">Création et déploiement d'un site e-commerce</p>
+          </li>
+        </ul>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-xs text-neutral-500 font-[JetBrains_Mono] uppercase tracking-widest mb-4">Compétences techniques</h2>
+        <dl class="space-y-4 text-sm">
+          <div>
+            <dt class="text-neutral-500 font-[JetBrains_Mono] text-xs mb-1">Environnements</dt>
+            <dd class="text-neutral-300 leading-relaxed">
+              Windows (Server, Core), Unix/Linux (Debian, Arch, FreeBSD), macOS
+            </dd>
+          </div>
+          <div>
+            <dt class="text-neutral-500 font-[JetBrains_Mono] text-xs mb-1">Virtualisation</dt>
+            <dd class="text-neutral-300 leading-relaxed">
+              Proxmox, Hyper-V, VMware, XCP-ng et Xen Orchestra
+            </dd>
+          </div>
+          <div>
+            <dt class="text-neutral-500 font-[JetBrains_Mono] text-xs mb-1">Infrastructure &amp; sécurité</dt>
+            <dd class="text-neutral-300 leading-relaxed">
+              Stormshield, Cisco, Ubiquiti, Zyxel, OPNsense, OpenWrt
+            </dd>
+          </div>
+          <div>
+            <dt class="text-neutral-500 font-[JetBrains_Mono] text-xs mb-1">Applications &amp; services</dt>
+            <dd class="text-neutral-300 leading-relaxed">
+              Annuaires (Active Directory, Entra ID, Google Workspace, OpenLDAP), IAM (Keycloak, SAML, OpenID Connect,
+              OAuth), exposition web (NGINX, Traefik)
+            </dd>
+          </div>
+          <div>
+            <dt class="text-neutral-500 font-[JetBrains_Mono] text-xs mb-1">Développement</dt>
+            <dd class="text-neutral-300 leading-relaxed">
+              Python, Shell, PowerShell, HTML/CSS, JavaScript (React, TypeScript)
+            </dd>
+          </div>
+          <div>
+            <dt class="text-neutral-500 font-[JetBrains_Mono] text-xs mb-1">Conteneurisation &amp; orchestration</dt>
+            <dd class="text-neutral-300 leading-relaxed">
+              Docker, Kubernetes (Talos Linux, Rancher RKE2, K3s)
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-xs text-neutral-500 font-[JetBrains_Mono] uppercase tracking-widest mb-4">Certifications &amp; langues</h2>
+        <ul class="text-sm text-neutral-300 space-y-2">
+          <li>CCNA 1, 2 et 3</li>
+          <li>Certification Stormshield Network Administrator (CSNA)</li>
+          <li><span class="text-neutral-500">Langues :</span> français (langue maternelle), anglais (C2 — expérimenté)</li>
+        </ul>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-xs text-neutral-500 font-[JetBrains_Mono] uppercase tracking-widest mb-4">Centres d'intérêt</h2>
+        <p class="text-sm text-neutral-400 leading-relaxed">
+          Homelab (hébergement local, expérimentation sur l'infrastructure et les systèmes) · portfolio personnel ·
+          cinématographie et photographie · fabrication électronique (IoT, drone FPV) et impression 3D · VTT / bikepacking
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-xs text-neutral-500 font-[JetBrains_Mono] uppercase tracking-widest mb-4">Contact</h2>
+        <ul class="space-y-2 text-sm font-[JetBrains_Mono]">
+          <li>
+            <a href="mailto:tuna@kirkoc.fr" class="text-neutral-400 hover:text-neutral-100 underline-offset-2 hover:underline transition-colors">tuna@kirkoc.fr</a>
+          </li>
+          <li>
+            <a href="https://tuna.kirkoc.fr" class="text-neutral-400 hover:text-neutral-100 underline-offset-2 hover:underline transition-colors">tuna.kirkoc.fr</a>
+          </li>
+          <li class="text-neutral-500 pt-1">Réseaux : @Tunakirkoc</li>
+        </ul>
+      </section>
+    </div>
+  </main>
+</BaseLayout>
