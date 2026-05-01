@@ -1,0 +1,93 @@
+---
+import { getCollection } from 'astro:content';
+import { getAccent } from '../lib/accents';
+
+interface Props {
+  id: string;
+}
+
+const { id } = Astro.props;
+
+const post = (await getCollection('labs')).find(
+  (p) => p.id.replace(/\.mdx?$/, '') === id
+);
+
+if (!post) throw new Error(`LabsPostCard: no post found with id "${id}"`);
+
+const c = getAccent(post.data.accent);
+const href = `/labs/${id}`;
+---
+
+<a
+  href={href}
+  data-card
+  class={`group block border border-neutral-800 rounded-lg p-5 relative ${c.cardBorder} ${c.cardBg} transition-all duration-200`}
+>
+  <div class="flex items-start justify-between gap-4">
+    <h2 class={`text-white font-semibold font-[Inter] ${c.titleHover} transition-colors`}>
+      {post.data.title}
+    </h2>
+    <time class="text-neutral-600 text-xs font-[JetBrains_Mono] shrink-0 mt-0.5" datetime={post.data.date}>
+      {post.data.date}
+    </time>
+  </div>
+  <p class="text-neutral-400 text-sm mt-1.5 font-[Inter]">{post.data.description}</p>
+  <div class="mt-3 flex flex-wrap gap-1.5">
+    {post.data.tags.map((tag) => (
+      <span class={`text-xs ${c.textDim} border ${c.tagBorder} rounded px-2 py-0.5 font-[JetBrains_Mono]`}>
+        {tag}
+      </span>
+    ))}
+  </div>
+</a>
+
+<style>
+  [data-card]::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: radial-gradient(
+      300px circle at var(--mouse-x, -300px) var(--mouse-y, -300px),
+      rgba(255, 255, 255, 0.25),
+      transparent 65%
+    );
+    opacity: 0;
+    transition: opacity 150ms ease;
+    pointer-events: none;
+    padding: 1px;
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+  }
+  [data-card]:hover::after {
+    opacity: 1;
+  }
+</style>
+
+<script>
+  function initCards() {
+    for (const card of document.querySelectorAll('[data-card]')) {
+      if ((card as HTMLElement).dataset.glare) continue;
+      (card as HTMLElement).dataset.glare = '1';
+
+      card.addEventListener('mousemove', (e) => {
+        const { left, top } = (card as HTMLElement).getBoundingClientRect();
+        (card as HTMLElement).style.setProperty('--mouse-x', `${(e as MouseEvent).clientX - left}px`);
+        (card as HTMLElement).style.setProperty('--mouse-y', `${(e as MouseEvent).clientY - top}px`);
+      });
+      card.addEventListener('mouseleave', () => {
+        (card as HTMLElement).style.setProperty('--mouse-x', '-300px');
+        (card as HTMLElement).style.setProperty('--mouse-y', '-300px');
+      });
+    }
+  }
+
+  initCards();
+  document.addEventListener('astro:page-load', initCards);
+</script>

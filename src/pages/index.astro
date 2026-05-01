@@ -1,0 +1,66 @@
+---
+import { Image } from "astro:assets";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import profileImg from "../assets/images/profile.jpg";
+import DotGrid from "../components/DotGrid";
+
+---
+<BaseLayout title={"Home"} description={"Welcome to Tuna Kirkoc's personal website. Explore my projects, thoughts, and more."}>
+<main class="relative min-h-screen flex flex-col bg-neutral-950 text-white font-[Inter]">
+
+  <!-- Hero -->
+  <section class="relative flex items-center justify-center py-8 px-8">
+    <div class="absolute inset-0 z-0 bg-neutral-950"></div>
+    <div class="absolute inset-0 z-[1]">
+      <DotGrid client:load />
+    </div>
+    <a
+      href="/about"
+      aria-label="À propos"
+      class="group relative z-[2] flex items-center gap-5 rounded-2xl px-3 py-2 -mx-3 -my-2 outline-offset-4 transition-colors hover:bg-white/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500/60"
+    >
+      <Image
+        src={profileImg}
+        alt=""
+        width={80}
+        height={80}
+        loading="eager"
+        class="w-20 h-20 rounded-full object-cover border-2 border-neutral-800 shrink-0 transition-[border-color,box-shadow]"
+      />
+      <div>
+        <h1 class="text-xl font-bold tracking-tight">Tuna</h1>
+        <p class="text-neutral-400 text-sm mt-0.5">IT Student</p>
+        <p class="text-neutral-500 text-xs mt-1 italic">"Explore. Dream. Discover." - Unknown</p>
+      </div>
+    </a>
+  </section>
+
+  <!-- Split: Labs | Lens -->
+  <section class="relative z-10 flex-1 flex flex-col md:flex-row min-h-0">
+
+    <!-- Labs -->
+    <a href="/labs" class="group relative flex-1 flex items-center justify-center overflow-hidden transition-all duration-500 md:hover:flex-[1.6]">
+      <div class="absolute inset-0 bg-gradient-to-br from-emerald-950/50 via-neutral-900/80 to-neutral-950 group-hover:from-emerald-900/60 transition-all duration-500"></div>
+      <div class="absolute inset-0 border-b md:border-b-0 md:border-r border-neutral-800/40"></div>
+      <div class="relative z-10 text-center px-8">
+        <h2 class="text-5xl md:text-7xl font-bold tracking-tighter text-white/85 group-hover:text-white transition-colors duration-300">Labs</h2>
+        <p class="text-neutral-500 group-hover:text-neutral-300 transition-colors duration-300 text-sm mt-3">Explore my latest experiments and projects.</p>
+        <span class="mt-5 inline-flex items-center gap-2 text-emerald-500 group-hover:text-emerald-400 text-sm transition-all duration-300 group-hover:gap-3">
+          <span>Explore</span>
+          <span class="transition-transform duration-300 group-hover:translate-x-1">→</span>
+        </span>
+      </div>
+    </a>
+
+    <!-- Lens (disabled) -->
+    <div class="group relative flex-1 flex items-center justify-center overflow-hidden transition-all duration-500 md:hover:flex-[1.6]">
+      <div class="absolute inset-0 bg-gradient-to-bl from-purple-950/50 via-neutral-900/80 to-neutral-950 group-hover:from-purple-900/60 transition-all duration-500"></div>
+      <div class="relative z-10 text-center px-8">
+        <h2 class="text-5xl md:text-7xl font-bold tracking-tighter text-white/85 group-hover:text-white transition-colors duration-300">Lens</h2>
+        <p class="text-neutral-500 group-hover:text-neutral-300 transition-colors duration-300 text-sm mt-3">Soon™</p>
+      </div>
+    </div>
+
+  </section>
+
+</main>

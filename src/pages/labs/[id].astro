@@ -1,0 +1,170 @@
+---
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getAccent } from "../../lib/accents";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("labs");
+  return posts.map((post) => ({
+    params: { id: post.id.replace(/\.mdx?$/, "") },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content, headings } = await render(post);
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const c = getAccent(post.data.accent);
+---
+
+<BaseLayout title={post.data.title} description={post.data.description}>
+  <main class="min-h-screen bg-neutral-950 text-white px-6 py-12">
+    <div class="max-w-5xl mx-auto">
+
+      <a href="/labs" class={`text-neutral-500 ${c.backHover} text-sm transition-colors font-[JetBrains_Mono]`}>← labs</a>
+
+      <header class={`mt-10 mb-10 pb-8 border-b border-neutral-800`}>
+        {post.data.draft && (
+          <span class="inline-block text-xs text-amber-500 border border-amber-900/50 rounded px-2 py-0.5 font-[JetBrains_Mono] mb-4">
+            draft
+          </span>
+        )}
+        <time class={`block ${c.text} text-sm font-[JetBrains_Mono] mb-3`}>{post.data.date}</time>
+        <h1 class="text-3xl font-bold tracking-tight font-[Inter]">{post.data.title}</h1>
+        <p class="text-neutral-400 mt-2 font-[Inter]">{post.data.description}</p>
+        <div class="mt-4 flex flex-wrap gap-1.5">
+          {post.data.tags.map((tag) => (
+            <span class={`text-xs ${c.textDim} border ${c.tagBorder} rounded px-2 py-0.5 font-[JetBrains_Mono]`}>
+              {tag}
+            </span>
+          ))}
+        </div>
+      </header>
+
+      <div class="flex gap-12 items-start" data-toc-active={c.text}>
+
+        <!-- TOC sidebar — desktop only -->
+        {toc.length > 1 && (
+          <aside class="hidden md:block w-44 shrink-0 self-stretch">
+            <div class="sticky top-8">
+              <p class="text-xs text-neutral-500 font-[JetBrains_Mono] uppercase tracking-widest mb-3">Contents</p>
+              <nav>
+                <ul class="space-y-0.5">
+                  {toc.map((h) => (
+                    <li>
+                      <a
+                        href={`#${h.slug}`}
+                        data-toc={h.slug}
+                        class={`block text-sm text-neutral-500 hover:text-neutral-200 transition-colors py-1 leading-snug${h.depth === 3 ? " pl-3" : ""}`}
+                      >
+                        {h.text}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </div>
+          </aside>
+        )}
+
+        <div class="flex-1 min-w-0">
+
+          <!-- TOC toggle — mobile only -->
+          {toc.length > 1 && (
+            <div class="md:hidden mb-8">
+              <button
+                id="toc-toggle"
+                class="flex items-center justify-between w-full text-sm text-neutral-400 border border-neutral-800 rounded px-4 py-2.5 hover:border-neutral-700 transition-colors font-[JetBrains_Mono]"
+                aria-expanded="false"
+              >
+                <span>Contents</span>
+                <svg id="toc-chevron" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <div id="toc-mobile" class="hidden mt-1 border border-neutral-800 rounded bg-neutral-900/60 px-4 py-3">
+                <ul class="space-y-0.5">
+                  {toc.map((h) => (
+                    <li>
+                      <a
+                        href={`#${h.slug}`}
+                        class={`block text-sm text-neutral-400 ${c.mobileToc} transition-colors py-1${h.depth === 3 ? " pl-3" : ""}`}
+                      >
+                        {h.text}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          <article class={`prose prose-invert prose-neutral max-w-none
+            prose-headings:font-[Inter] prose-headings:tracking-tight
+            prose-code:font-[JetBrains_Mono] prose-pre:font-[JetBrains_Mono]
+            ${c.proseLink} prose-a:no-underline hover:prose-a:underline
+            prose-pre:bg-neutral-900 prose-pre:border prose-pre:border-neutral-800`}>
+            <Content />
+          </article>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+</BaseLayout>
+
+<script>
+  // Mobile TOC toggle
+  const toggle = document.getElementById("toc-toggle");
+  const mobile = document.getElementById("toc-mobile");
+  const chevron = document.getElementById("toc-chevron");
+
+  toggle?.addEventListener("click", () => {
+    const open = toggle.getAttribute("aria-expanded") === "true";
+    toggle.setAttribute("aria-expanded", String(!open));
+    mobile?.classList.toggle("hidden");
+    if (chevron) chevron.style.transform = open ? "" : "rotate(180deg)";
+  });
+
+  // Close mobile TOC on link click
+  mobile?.querySelectorAll("a").forEach((a) => {
+    a.addEventListener("click", () => {
+      mobile.classList.add("hidden");
+      toggle?.setAttribute("aria-expanded", "false");
+      if (chevron) chevron.style.transform = "";
+    });
+  });
+
+  // Active heading highlight (desktop sidebar)
+  const tocLinks = document.querySelectorAll<HTMLAnchorElement>("[data-toc]");
+  if (tocLinks.length > 0) {
+    const activeClass = document.querySelector<HTMLElement>('[data-toc-active]')?.dataset.tocActive ?? 'text-emerald-400';
+
+    const setActive = (slug: string) => {
+      tocLinks.forEach((link) => {
+        const active = link.dataset.toc === slug;
+        link.classList.toggle(activeClass, active);
+        link.classList.toggle("text-neutral-500", !active);
+        link.classList.toggle("text-neutral-200", false);
+      });
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActive(entry.target.id);
+            break;
+          }
+        }
+      },
+      { rootMargin: "-10px 0px -80% 0px", threshold: 0 }
+    );
+
+    tocLinks.forEach((link) => {
+      const target = document.getElementById(link.dataset.toc!);
+      if (target) observer.observe(target);
+    });
+  }
+</script>
