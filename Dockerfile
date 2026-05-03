@@ -3,8 +3,11 @@ WORKDIR /app
 
 COPY . .
 
-RUN npm install
-RUN npm run build
+RUN npm install \
+    && npm run build \
+    && chown -R node:node /app
+
+USER node
 
 ENV HOST=0.0.0.0
 ENV PORT=4321
