@@ -23,10 +23,10 @@ Il s'appuie sur **Mode S** (*Mode Select*), un protocole sol-avion sur **1090 MH
 Une trame ADS-B DF-17 fait **112 bits** (14 octets), transmis en modulation **PPM** (*Pulse Position Modulation*) : chaque bit est encodé par la position d'une impulsion dans une fenêtre de 1 µs. Le signal est précédé d'un préambule fixe de 8 µs (4 impulsions aux positions 0, 1, 3,5 et 4,5 µs) qui permet au récepteur de se synchroniser.
 
 ```
- Préambule    DF    CA      Adresse ICAO         Message Extended (ME)         CRC
-  8 µs      5 bits 3 bits     24 bits                  56 bits                24 bits
-├─────────┤├─────┤├───┤├──────────────────┤├───────────────────────────────┤├──────────┤
-│ 0─1─3.5─4.5 µs │    │  ex: 0x3944EF    │ TC (5b) │ Données (51b)        │          │
+    Préambule        DF      CA      Adresse ICAO         Message Extended (ME)         CRC
+      8 µs         5 bits  3 bits      24 bits                  56 bits               24 bits
+├────────────────┼────────┼──────┼─────────────────┼────────────────────────────────┼─────────┤
+│ 0─1─3.5─4.5 µs │        │      │ ex: 0x3944EF    │ TC (5b) │ Données (51b)        │         │
 ```
 
 | Champ | Taille | Rôle |
