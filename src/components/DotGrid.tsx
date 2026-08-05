@@ -84,7 +84,9 @@ export default function DotGrid() {
         }
 
         // Animated greyscale: each dot pulses through grey tones
-        const wave = Math.sin(t * 0.8 + dot.phase + dot.originX * 0.02 + dot.originY * 0.015);
+        const wave = Math.sin(
+          t * 0.8 + dot.phase + dot.originX * 0.02 + dot.originY * 0.015,
+        );
         const grey = Math.floor(100 + wave * 80); // range ~20–180
 
         // Brightness based on cursor distance
@@ -140,7 +142,7 @@ export default function DotGrid() {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 w-full h-full pointer-events-none"
+      className="pointer-events-none absolute inset-0 h-full w-full"
     />
   );
 }
