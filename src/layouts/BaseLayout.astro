@@ -33,7 +33,7 @@ const { title, description = "Tuna Kirkoc - IT Student" } = Astro.props;
 
     <footer
       id="scroll-footer"
-      class="translate-y-4 border-t border-neutral-800/60 bg-neutral-950 px-6 py-3 opacity-0 transition-all duration-500 ease-out"
+      class="border-t border-neutral-800/60 bg-neutral-950 px-6 py-3"
     >
       <div
         class="mx-auto flex max-w-5xl items-center justify-between font-[JetBrains_Mono] text-xs text-neutral-500"
@@ -43,20 +43,5 @@ const { title, description = "Tuna Kirkoc - IT Student" } = Astro.props;
       </div>
     </footer>
 
-    <script>
-      const footer = document.getElementById("scroll-footer");
-      if (footer) {
-        const observer = new IntersectionObserver(
-          ([entry]) => {
-            if (entry.isIntersecting) {
-              footer.classList.remove("opacity-0", "translate-y-4");
-              footer.classList.add("opacity-100", "translate-y-0");
-            }
-          },
-          { threshold: 0.1 },
-        );
-        observer.observe(footer);
-      }
-    </script>
   </body>
 </html>
