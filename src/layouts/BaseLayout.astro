@@ -8,7 +8,6 @@ interface Props {
 }
 
 const { title, description = "Tuna Kirkoc - IT Student" } = Astro.props;
-
 ---
 
 <!doctype html>
@@ -25,7 +24,7 @@ const { title, description = "Tuna Kirkoc - IT Student" } = Astro.props;
       href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    
+
     <title>{title} — Tuna Kirkoc</title>
     <ClientRouter />
   </head>
@@ -34,9 +33,11 @@ const { title, description = "Tuna Kirkoc - IT Student" } = Astro.props;
 
     <footer
       id="scroll-footer"
-      class="opacity-0 translate-y-4 transition-all duration-500 ease-out border-t border-neutral-800/60 bg-neutral-950 px-6 py-3"
+      class="translate-y-4 border-t border-neutral-800/60 bg-neutral-950 px-6 py-3 opacity-0 transition-all duration-500 ease-out"
     >
-      <div class="max-w-5xl mx-auto flex items-center justify-between text-xs text-neutral-500 font-[JetBrains_Mono]">
+      <div
+        class="mx-auto flex max-w-5xl items-center justify-between font-[JetBrains_Mono] text-xs text-neutral-500"
+      >
         <span>Tuna Kirkoc</span>
         <span>&copy; {new Date().getFullYear()}</span>
       </div>
@@ -52,7 +53,7 @@ const { title, description = "Tuna Kirkoc - IT Student" } = Astro.props;
               footer.classList.add("opacity-100", "translate-y-0");
             }
           },
-          { threshold: 0.1 }
+          { threshold: 0.1 },
         );
         observer.observe(footer);
       }

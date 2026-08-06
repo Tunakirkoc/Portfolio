@@ -18,98 +18,131 @@ const c = getAccent(post.data.accent);
 ---
 
 <BaseLayout title={post.data.title} description={post.data.description}>
-  <main class="min-h-screen bg-neutral-950 text-white px-6 py-12">
-    <div class="max-w-5xl mx-auto">
-
-      <a href="/labs" class={`text-neutral-500 ${c.backHover} text-sm transition-colors font-[JetBrains_Mono]`}>← labs</a>
+  <main class="min-h-screen bg-neutral-950 px-6 py-12 text-white">
+    <div class="mx-auto max-w-5xl">
+      <a
+        href="/labs"
+        class={`text-neutral-500 ${c.backHover} text-sm transition-colors font-[JetBrains_Mono]`}
+        >← labs</a
+      >
 
       <header class={`mt-10 mb-10 pb-8 border-b border-neutral-800`}>
-        {post.data.draft && (
-          <span class="inline-block text-xs text-amber-500 border border-amber-900/50 rounded px-2 py-0.5 font-[JetBrains_Mono] mb-4">
-            draft
-          </span>
-        )}
-        <time class={`block ${c.text} text-sm font-[JetBrains_Mono] mb-3`}>{post.data.date}</time>
-        <h1 class="text-3xl font-bold tracking-tight font-[Inter]">{post.data.title}</h1>
-        <p class="text-neutral-400 mt-2 font-[Inter]">{post.data.description}</p>
-        <div class="mt-4 flex flex-wrap gap-1.5">
-          {post.data.tags.map((tag) => (
-            <span class={`text-xs ${c.textDim} border ${c.tagBorder} rounded px-2 py-0.5 font-[JetBrains_Mono]`}>
-              {tag}
+        {
+          post.data.draft && (
+            <span class="mb-4 inline-block rounded border border-amber-900/50 px-2 py-0.5 font-[JetBrains_Mono] text-xs text-amber-500">
+              draft
             </span>
-          ))}
+          )
+        }
+        <time class={`block ${c.text} text-sm font-[JetBrains_Mono] mb-3`}
+          >{post.data.date}</time
+        >
+        <h1 class="font-[Inter] text-3xl font-bold tracking-tight">
+          {post.data.title}
+        </h1>
+        <p class="mt-2 font-[Inter] text-neutral-400">
+          {post.data.description}
+        </p>
+        <div class="mt-4 flex flex-wrap gap-1.5">
+          {
+            post.data.tags.map((tag) => (
+              <span
+                class={`text-xs ${c.textDim} border ${c.tagBorder} rounded px-2 py-0.5 font-[JetBrains_Mono]`}
+              >
+                {tag}
+              </span>
+            ))
+          }
         </div>
       </header>
 
-      <div class="flex gap-12 items-start" data-toc-active={c.text}>
-
+      <div class="flex items-start gap-12" data-toc-active={c.text}>
         <!-- TOC sidebar — desktop only -->
-        {toc.length > 1 && (
-          <aside class="hidden md:block w-44 shrink-0 self-stretch">
-            <div class="sticky top-8">
-              <p class="text-xs text-neutral-500 font-[JetBrains_Mono] uppercase tracking-widest mb-3">Contents</p>
-              <nav>
-                <ul class="space-y-0.5">
-                  {toc.map((h) => (
-                    <li>
-                      <a
-                        href={`#${h.slug}`}
-                        data-toc={h.slug}
-                        class={`block text-sm text-neutral-500 hover:text-neutral-200 transition-colors py-1 leading-snug${h.depth === 3 ? " pl-3" : ""}`}
-                      >
-                        {h.text}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
-            </div>
-          </aside>
-        )}
-
-        <div class="flex-1 min-w-0">
-
-          <!-- TOC toggle — mobile only -->
-          {toc.length > 1 && (
-            <div class="md:hidden mb-8">
-              <button
-                id="toc-toggle"
-                class="flex items-center justify-between w-full text-sm text-neutral-400 border border-neutral-800 rounded px-4 py-2.5 hover:border-neutral-700 transition-colors font-[JetBrains_Mono]"
-                aria-expanded="false"
-              >
-                <span>Contents</span>
-                <svg id="toc-chevron" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              <div id="toc-mobile" class="hidden mt-1 border border-neutral-800 rounded bg-neutral-900/60 px-4 py-3">
-                <ul class="space-y-0.5">
-                  {toc.map((h) => (
-                    <li>
-                      <a
-                        href={`#${h.slug}`}
-                        class={`block text-sm text-neutral-400 ${c.mobileToc} transition-colors py-1${h.depth === 3 ? " pl-3" : ""}`}
-                      >
-                        {h.text}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+        {
+          toc.length > 1 && (
+            <aside class="hidden w-44 shrink-0 self-stretch md:block">
+              <div class="sticky top-8">
+                <p class="mb-3 font-[JetBrains_Mono] text-xs tracking-widest text-neutral-500 uppercase">
+                  Contents
+                </p>
+                <nav>
+                  <ul class="space-y-0.5">
+                    {toc.map((h) => (
+                      <li>
+                        <a
+                          href={`#${h.slug}`}
+                          data-toc={h.slug}
+                          class={`block py-1 text-sm text-neutral-500 transition-colors hover:text-neutral-200 leading-snug${h.depth === 3 ? " pl-3" : ""}`}
+                        >
+                          {h.text}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
               </div>
-            </div>
-          )}
+            </aside>
+          )
+        }
 
-          <article class={`prose prose-invert prose-neutral max-w-none
+        <div class="min-w-0 flex-1">
+          <!-- TOC toggle — mobile only -->
+          {
+            toc.length > 1 && (
+              <div class="mb-8 md:hidden">
+                <button
+                  id="toc-toggle"
+                  class="flex w-full items-center justify-between rounded border border-neutral-800 px-4 py-2.5 font-[JetBrains_Mono] text-sm text-neutral-400 transition-colors hover:border-neutral-700"
+                  aria-expanded="false"
+                >
+                  <span>Contents</span>
+                  <svg
+                    id="toc-chevron"
+                    class="h-4 w-4 transition-transform duration-200"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+                <div
+                  id="toc-mobile"
+                  class="mt-1 hidden rounded border border-neutral-800 bg-neutral-900/60 px-4 py-3"
+                >
+                  <ul class="space-y-0.5">
+                    {toc.map((h) => (
+                      <li>
+                        <a
+                          href={`#${h.slug}`}
+                          class={`block text-sm text-neutral-400 ${c.mobileToc} transition-colors py-1${h.depth === 3 ? " pl-3" : ""}`}
+                        >
+                          {h.text}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )
+          }
+
+          <article
+            class={`prose prose-invert prose-neutral max-w-none
             prose-headings:font-[Inter] prose-headings:tracking-tight
             prose-code:font-[JetBrains_Mono] prose-pre:font-[JetBrains_Mono]
             ${c.proseLink} prose-a:no-underline hover:prose-a:underline
-            prose-pre:bg-neutral-900 prose-pre:border prose-pre:border-neutral-800`}>
+            prose-pre:bg-neutral-900 prose-pre:border prose-pre:border-neutral-800`}
+          >
             <Content />
           </article>
-
         </div>
       </div>
-
     </div>
   </main>
 </BaseLayout>
@@ -139,7 +172,9 @@ const c = getAccent(post.data.accent);
   // Active heading highlight (desktop sidebar)
   const tocLinks = document.querySelectorAll<HTMLAnchorElement>("[data-toc]");
   if (tocLinks.length > 0) {
-    const activeClass = document.querySelector<HTMLElement>('[data-toc-active]')?.dataset.tocActive ?? 'text-emerald-400';
+    const activeClass =
+      document.querySelector<HTMLElement>("[data-toc-active]")?.dataset
+        .tocActive ?? "text-emerald-400";
 
     const setActive = (slug: string) => {
       tocLinks.forEach((link) => {
@@ -159,7 +194,7 @@ const c = getAccent(post.data.accent);
           }
         }
       },
-      { rootMargin: "-10px 0px -80% 0px", threshold: 0 }
+      { rootMargin: "-10px 0px -80% 0px", threshold: 0 },
     );
 
     tocLinks.forEach((link) => {
