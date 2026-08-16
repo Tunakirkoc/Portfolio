@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import CodeBlockCopy from "../../components/CodeBlockCopy.astro";
 import { getAccent } from "../../lib/accents";
 
 export async function getStaticPaths() {
@@ -139,7 +140,9 @@ const c = getAccent(post.data.accent);
             ${c.proseLink} prose-a:no-underline hover:prose-a:underline
             prose-pre:bg-neutral-900 prose-pre:border prose-pre:border-neutral-800`}
           >
-            <Content />
+            <CodeBlockCopy>
+              <Content />
+            </CodeBlockCopy>
           </article>
         </div>
       </div>
